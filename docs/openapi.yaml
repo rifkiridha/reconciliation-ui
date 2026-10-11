@@ -1,0 +1,154 @@
+openapi: 3.1.0
+info:
+  title: Reconciliation Studio REST API
+  description: API specification for Reconciliation Studio — Dynamic Data Reconciliation & Job Management Platform.
+  version: 2.5.0
+servers:
+  - url: http://localhost:3000/api
+    description: Local Dev Server
+paths:
+  /health:
+    get:
+      summary: Get application health and SQLite engine status
+      responses:
+        '200':
+          description: Health details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+                  app: { type: string }
+                  engine: { type: string }
+                  databaseCount: { type: integer }
+
+  /system/reset:
+    post:
+      summary: Reset all databases and seed demo datasets
+      responses:
+        '200':
+          description: Reset confirmation
+
+  /databases:
+    get:
+      summary: List all logical databases and registered tables
+      responses:
+        '200':
+          description: Array of databases
+    post:
+      summary: Create a new logical database
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                description: { type: string }
+      responses:
+        '201':
+          description: Database created
+
+  /databases/{dbName}/tables:
+    get:
+      summary: List tables in database
+      parameters:
+        - name: dbName
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Table list
+    post:
+      summary: Create a dynamic physical table
+      parameters:
+        - name: dbName
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tableName, columns]
+              properties:
+                tableName: { type: string }
+                description: { type: string }
+                columns:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        '201':
+          description: Table created
+
+  /modules/provision-from-template:
+    post:
+      summary: One-click auto-provision module from business template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [moduleName]
+              properties:
+                moduleName: { type: string }
+                templateType: { type: string }
+                generateSampleData: { type: boolean }
+      responses:
+        '201':
+          description: Module and job auto-provisioned
+
+  /jobs/{id}/run:
+    post:
+      summary: Run a reconciliation job immediately
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Job execution completed
+
+  /reconciliation-results:
+    get:
+      summary: Retrieve reconciliation results with filters and pagination
+      parameters:
+        - name: executionId
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer }
+        - name: limit
+          in: query
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Filtered results
+
+  /presentation/download:
+    get:
+      summary: Download complete PowerPoint presentation (.pptx)
+      responses:
+        '200':
+          description: Binary PPTX download
+          content:
+            application/vnd.openxmlformats-officedocument.presentationml.presentation:
+              schema:
+                type: string
+                format: binary

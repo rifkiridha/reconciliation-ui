@@ -1,0 +1,6 @@
+{
+  "name": "Reconciliation Studio",
+  "description": "Dynamic Data Reconciliation & Job Management Platform. Simulates enterprise data reconciliation, automated matching rules, job orchestration, and execution reporting across business scenarios.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
