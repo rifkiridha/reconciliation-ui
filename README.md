@@ -52,6 +52,89 @@ npm start
 
 ---
 
+## Deployment
+
+Reconciliation Studio is a full-stack web application: the React frontend and Express API must both be available. **Google Cloud Run is the recommended deployment target.** Firebase App Distribution is intended for mobile application packages, so the Firebase option for this project uses Firebase Hosting for the web frontend and routes `/api` requests to Cloud Run.
+
+### Prerequisites
+
+- Node.js 22 or later and npm
+- A Google Cloud project with billing enabled
+- The [Google Cloud CLI](https://cloud.google.com/sdk/docs/install)
+- For the Firebase option, the [Firebase CLI](https://firebase.google.com/docs/cli)
+
+Before deploying, verify the production build locally:
+
+```bash
+npm install
+npm run build
+```
+
+### Option 1: Deploy the full application to Google Cloud Run
+
+Authenticate, select your Google Cloud project, and enable the required APIs:
+
+```bash
+gcloud auth login
+gcloud config set project YOUR_GOOGLE_CLOUD_PROJECT_ID
+gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com
+```
+
+Deploy directly from the repository source to the Jakarta region:
+
+```bash
+gcloud run deploy reconciliation-studio --source . --region asia-southeast2 --allow-unauthenticated --set-env-vars NODE_ENV=production --max-instances 1
+```
+
+Cloud Build detects the Node.js application, installs its dependencies, runs the production build, and deploys the service. Obtain the public URL after deployment:
+
+```bash
+gcloud run services describe reconciliation-studio --region asia-southeast2 --format="value(status.url)"
+```
+
+Open that URL and verify the dashboard and `/api/health` endpoint before adding it to the project submission.
+
+### Option 2: Firebase Hosting frontend with a Cloud Run API
+
+First deploy the Cloud Run service using Option 1. The committed [`firebase.json`](firebase.json) serves the built React application from `dist/`, forwards `/api/**` to the `reconciliation-studio` Cloud Run service in `asia-southeast2`, and sends all other routes to the SPA entry point.
+
+Install and authenticate the Firebase CLI, associate the repository with a Firebase project, then deploy Hosting:
+
+```bash
+npm install --global firebase-tools
+firebase login
+firebase use --add
+npm run build
+firebase deploy --only hosting
+```
+
+If you change the Cloud Run service name or region, update `serviceId` or `region` in `firebase.json` before deploying. The Cloud Run service must remain publicly invokable for the Hosting rewrite used by this demo.
+
+### Demo data persistence
+
+The current demo stores SQLite data on the container filesystem. Cloud Run container filesystems are ephemeral, so data can reset when an instance is replaced. `--max-instances 1` avoids multiple independent SQLite copies running concurrently, but it does not provide durable storage. For production, migrate the data layer to Cloud SQL, Firestore, or another managed persistent database.
+
+---
+
+## Road to DevFest Jakarta 2026 Submission
+
+Submit through the [Road to DevFest Jakarta 2026 project submission guide](https://gdgjakarta.org/road-to-devfest26-submission) and use the Google account registered for the event.
+
+| Deliverable | Location |
+|---|---|
+| Source code | [github.com/rifkiridha/reconciliation-ui](https://github.com/rifkiridha/reconciliation-ui) |
+| Setup and deployment instructions | This README |
+| Demo video | [Reconciliation Studio — GDG Jakarta 2026](https://youtu.be/EZDKlLT46FA) |
+| Pitch deck | [`Reconciliation_Studio_Presentation.pptx`](Reconciliation_Studio_Presentation.pptx) |
+| Technical documentation | [`docs/`](docs/) |
+| Live application | Add the Cloud Run or Firebase Hosting URL after deployment |
+
+> **Video timing:** the current demo video is 3 minutes 12 seconds. The event announcement requests a maximum of 3 minutes, while the online submission guide states a maximum of 5 minutes. Trim at least 12 seconds for strict compliance and retain the current version as the backup video.
+
+Before final submission, confirm that the live URL is publicly accessible, the README instructions work from a clean checkout, and all linked video and presentation assets have appropriate sharing permissions.
+
+---
+
 ## Verified Demonstration Modules
 
 1. **Coffee Shop Sales Reconciliation (`COFFEE_SALES_RECON`)**  
